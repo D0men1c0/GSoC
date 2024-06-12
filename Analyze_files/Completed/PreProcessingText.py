@@ -50,6 +50,8 @@ def clean_sentences(text):
         text = BeautifulSoup(text, "html.parser").get_text()
     # Remove non-alphanumeric characters (excluding spaces and numbers)
     text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+    # Separate numbers from words by adding spaces around numbers
+    text = re.sub(r'(\d+)', r' \1 ', text)
     # Remove multiple spaces
     text = re.sub(r'\s+', ' ', text)
     # Remove leading and trailing spaces
