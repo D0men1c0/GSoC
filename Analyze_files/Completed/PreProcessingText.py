@@ -18,7 +18,7 @@ def preprocess_title(title):
     """
     tokens = word_tokenize(title)
     # Lowercase all tokens
-    tokens = [token.lower() for token in tokens]
+    tokens = [token for token in tokens]
     # Remove tokens that are not alphabetic
     tokens = [token for token in tokens if token not in stopwords.words('english')]
     # Lemmatize tokens
@@ -43,14 +43,16 @@ def clean_sentences(text):
     """
     Cleans a sentence by removing URLs, HTML tags, multiple spaces, punctuation, non-alphanumeric characters,
     leading and trailing spaces, and remaining underscores. 
-    Separates numbers from words, keeps proper nouns capitalized,and ensures proper capitalization at the 
+    Separates numbers from words, keeps proper nouns capitalized, and ensures proper capitalization at the 
     beginning of sentences.
     :param text: the sentence to clean
     :return: the cleaned sentence
     """
     try:
         # Remove URLs
-        text = re.sub(r'http\S+|www\S+|https\S+', '', text)
+        text = re.sub(r'http[s]?://\S+|www\.\S+', '', text, flags=re.IGNORECASE)
+        # Replace / with space if it's between words
+        text = re.sub(r'(?<=\w)/(?=\w)', ' ', text)
         # Remove leading and trailing spaces
         text = text.strip()
         # Remove HTML tags if present
@@ -62,7 +64,6 @@ def clean_sentences(text):
         pos_tags = pos_tag(words)
         # Identify named entities
         named_entities = ne_chunk(pos_tags, binary=False)
-        
         # Collect proper nouns
         proper_nouns = set()
         for subtree in named_entities:
@@ -70,7 +71,7 @@ def clean_sentences(text):
                 if subtree.label() in ['PERSON', 'ORGANIZATION', 'GPE', 'LOCATION']:
                     for leaf in subtree.leaves():
                         proper_nouns.add(leaf[0])
-        
+
         # Convert to lowercase but keep proper nouns capitalized
         cleaned_words = []
         for word in words:
@@ -80,7 +81,6 @@ def clean_sentences(text):
                 cleaned_words.append(word.lower())
         
         text = ' '.join(cleaned_words)
-        
         # Remove punctuation (excluding spaces)
         text = re.sub(r'[^\w\s]', '', text)
         # Remove non-alphanumeric characters (excluding spaces and numbers)
@@ -112,3 +112,11 @@ def clean_sentences(text):
     except:
         return ''
     return text
+
+def remove_single_characters(text):
+    """
+    Removes single characters from a text.
+    :param text: the text to remove single characters from
+    :return: the text with single characters removed
+    """
+    return re.sub(r'\b\w\b\s*', '', text)
