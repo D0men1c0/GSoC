@@ -1,0 +1,317 @@
+name_board,creator_thread,creator_id_thread,name_thread,created_on,registration_date,total_posts,reputation,creator_post,creator_id_post,content,created_on_post,top_label_1,top_score_1,top_label_2,top_score_2,top_label_3,top_score_3
+Tor,blonger,32544,Tor shrinked contribute,2020-01-09,1900-01-01 00:00:00,0.0,0.0,[deleted],37,[removed],2019-10-16,tor problems,0.2845191955566406,fraud,0.07356342673301697,arson,0.041160110384225845
+Tor,blonger,32544,Tor shrinked contribute,2020-01-09,1900-01-01 00:00:00,0.0,0.0,blonger,32544,"The Torproject recently ***LINK***announced[https://blog.torproject.org/removing-end-life-relays-network]***LINK*** that they will kick out old relays which are running EOL (End-of-live) Tor versions which are not official supported anymore and which might have some unfixed security holes in them.
+
+Doing so from time to time is necessary to provide a healthy and usable network for all of us.
+
+***LINK***This[http://ea5faa5po25cf7fb.onion/projects/tor/ticket/31549]***LINK*** is the ticket for removing them and ***LINK***here[http://rougmnvswfsmd4dq.onion/networksize.html?start=2019-08-18&end=2019-10-16]***LINK*** you can see the drop in the number of relays and the ***LINK***drop[http://rougmnvswfsmd4dq.onion/bandwidth-flags.html?start=2019-08-18&end=2019-10-16]***LINK*** in the advertised bandwidth.
+
+While this should not have any noticeable impact for us users it is hurting plenty from a safety perspective when 13,5% of relays are gone.
+Every relay who contributes makes an attack like ***LINK***Sybil attacks[https://en.wikipedia.org/wiki/Sybil_attack]***LINK*** more difficult for the attacker.
+
+So if you think about running a relay then this is a great moment to do it now and you can ***LINK***follow the insturctions[http://ea5faa5po25cf7fb.onion/projects/tor/wiki/TorRelayGuide]***LINK*** the Torproject published on their website.
+Setting up a relay is pretty easy even for people without much experience in Linux and you can get a small VPS without bandwidth limitations for less than 5€ a month.
+
+Exit-relays are the border to the normal internet and they could get a problem for you if someone is doing nasty stuff with them and LEA wants to look more closely and decide to kick your door down but running a Guard-relay is fine because no traffic will exit the Tor network.
+
+Thanks for running a relay!",2019-10-30,tor problems,0.2845191955566406,fraud,0.07356342673301697,arson,0.041160110384225845
+Tor,Xanitforthecash,2467,run tor node,2020-01-09,2018-03-21 00:00:00,88.0,9.0,rswz,32661,"***LINK***http://ea5faa5po25cf7fb.onion/projects/tor/wiki/TorRelayGuide[http://ea5faa5po25cf7fb.onion/projects/tor/wiki/TorRelayGuide]***LINK***
+
+
+Exit relay operators should understand the potential risks associated with running an exit relay. For the majority of operators in most countries, bridges and guard/middle relays are very low risk. Exits are the ones that present some legal concerns, but operators under most circumstances will be able to handle legal matters by having an abuse response letter, running the exit from a location that isn't their home, and reading through some of the legal resources that Tor-supportive lawyers have put together.",2019-10-16,arson,0.12024683505296707,hacking,0.07154031097888947,tor problems,0.05635840445756912
+Tor,Xanitforthecash,2467,run tor node,2020-01-09,2018-03-21 00:00:00,88.0,9.0,ChemistWeb,33150,if someone will do something bad from that ip you will have big problems and till you show that you are innocent you will stay in jail.,2019-10-16,arson,0.12024683505296707,hacking,0.07154031097888947,tor problems,0.05635840445756912
+Tor,Xanitforthecash,2467,run tor node,2020-01-09,2018-03-21 00:00:00,88.0,9.0,Xanitforthecash,2467,"I already leave tor open for a good amount of hrs everyday, not sure if that helps anyone.",2019-10-16,arson,0.12024683505296707,hacking,0.07154031097888947,tor problems,0.05635840445756912
+Tor,Xanitforthecash,2467,run tor node,2020-01-09,2018-03-21 00:00:00,88.0,9.0,Xanitforthecash,2467,I was thinking about giving some of my bandwith up and be a tor node. Do I need a powerfull system? What OSs can I have the machine running? And how much added security do I need? Am I putting myself at risk.,2019-10-30,arson,0.12024683505296707,hacking,0.07154031097888947,tor problems,0.05635840445756912
+Tor,Xanitforthecash,2467,run tor node,2020-01-09,2018-03-21 00:00:00,88.0,9.0,blonger,32544,"/post/29c4345cb3dbe6259d13
+
+You can even run a tor relay on a raspberry pi but if you would like to push really much traffic through it then you need a VPS and at best close to the authorities.
+You can run Tor on all supported OS. Linux is the most common one but relying too much on one OS could be dangerous if there are security holes in it.
+http://rougmnvswfsmd4dq.onion/platforms.html
+What do you mean with added security? You are only putting yourslef at some risk if you decide to run an exit-relay.",2019-10-16,arson,0.12024683505296707,hacking,0.07154031097888947,tor problems,0.05635840445756912
+Tor,Syndicate,33036,Tor browser,2019-11-06,1900-01-01 00:00:00,0.0,0.0,Syndicate,33036,"Tor Browser 9.0 is now available from the Tor Browser download page and also from our distribution directory.
+
+This release features important security updates to Firefox.
+
+Tor Browser 9.0 is the first stable release based on Firefox 68 ESR and contains a number of updates to other components as well (including Tor to 0.4.1.6 and OpenSSL to 1.1.1d for desktop versions and Tor to 0.4.1.5 for Android).
+
+In addition to all the needed patch rebasing and toolchain updates, we made big improvements to make Tor Browser work better for you.
+
+We want everyone in the world to be able to enjoy the privacy and freedom online Tor provides, and that's why over the past couple years, we've been working hard to boost our UX and localization efforts, with the biggest gains first visible in Tor Browser 8.0.
+
+In Tor Browser 9.0, we continue to build upon those efforts with sleeker integration and additional localization support.
+
+Goodbye, Onion Button
+We want your experience using Tor to be fully integrated within the browser so how you use Tor is more intuitive. That's why now, rather than using the onion button that was in the toolbar, you can see your path through the Tor network and request a New Circuit through the Tor network in {i} on the URL bar.
+
+Hello, New Identity Button
+Instead of going into the onion button to request a New Identity, we've made this important feature easier to access by giving it its own button in the toolbar.
+
+You can also request a New Identity, and a New Circuit, from within the [=] menu on the toolbar.
+
+Torbutton and Tor Launcher Integration
+Now that both extensions are tightly integrated into Tor Browser, they'll no longer be found on the about:addons page.
+
+We redesigned the bridge and proxy configuration dialogs and include them directly into the browser's preference settings as well.
+
+Rather than being a submenu behind the onion button, Tor Network Settings, including the ability to fetch bridges to bypass censorship where Tor is blocked, are easier to access on about:preferences#tor.
+
+Letterboxing
+Tor Browser in its default mode is starting with a content window rounded to a multiple of 200px x 100px  to prevent fingerprinting the screen dimensions. The strategy here is to put all users in a couple of buckets to make it harder to single them out. That worked so far until users started to resize their windows (e.g. by maximizing them or going into fullscreen mode). Tor Browser 9 ships with a fingerprinting defense for those scenarios as well, which is called Letterboxing, a technique developed by Mozilla and presented earlier this year. It works by adding white margins to a browser window so that the window is as close as possible to the desired size while users are still in a couple of screen size buckets that prevent singling them out with the help of screen dimensions.
+
+Better Localization Support
+If we want all people around the world to be able to use our software, then we need to make sure it's speaking their language. Since 8.0, Tor Browser has been available in 25 languages and we added 5 locales more in Tor Browser 8.5. Today, we add support for two additional languages: Macedonian (mk) and Romanian (ro), bringing the number of supported languages to 32.
+
+We also fixed bugs in our previously shipped localized bundles (such as ar and ko).
+
+Many thanks to everyone who helped with these, in particular to our translators.
+
+Known Issue
+As usual when preparing Tor Browser releases, we verified that the build is bit-for-bit reproducible. While we managed to get two matching builds, we found that in some occasions the builds differ (we found this happening on the Linux i686 and macOS bundles). We are still investigating the cause of this issue to fix it.",2019-10-30,hacking,0.16655434668064117,fraud,0.11005965620279312,trafficking,0.06932303309440613
+Tor,Syndicate,33036,Tor browser,2019-11-06,1900-01-01 00:00:00,0.0,0.0,brapola,39669,"Since the update I haven't been able to open RSS feeds. It either presents the option to download, or presents unformatted XML, depending on the extension.
+
+Anyone else?",2019-11-01,hacking,0.16655434668064117,fraud,0.11005965620279312,trafficking,0.06932303309440613
+Tor,Syndicate,33036,UPDATED tor security guide crosspost,2019-11-06,1900-01-01 00:00:00,0.0,0.0,Syndicate,33036,"***LINK***[UPDATED] Tor Security Guide[/post/96ff0e65540f64011d50]***LINK***
+														by ***LINK***/u/Syndicate[/u/Syndicate]***LINK*** • 2 weeks ago in ***LINK***/d/OpSec[/d/OpSec]***LINK***
+														8 points • ***LINK***19 comments[/post/96ff0e65540f64011d50]***LINK***",2019-10-30,update site,0.40813112258911133,arson,0.048836443573236465,tor problems,0.0381246842443943
+Tor,wekhiu48,1178,CostcoRotisserieChicken spreading FUD Let Smash Tor Bugs Together instead lying crosspost,2020-01-09,2019-05-24 00:00:00,1355.0,342.0,wekhiu48,1178,"***LINK***/u/CostcoRotisserieChicken spreading FUD, Let's Smash Tor Bugs Together Instead of Lying![/post/54cc41f587851e97960a]***LINK***
+														by ***LINK***/u/wekhiu48[/u/wekhiu48]***LINK*** • 2 months ago in ***LINK***/d/OpSec[/d/OpSec]***LINK***
+														2 points • ***LINK***11 comments[/post/54cc41f587851e97960a]***LINK***",2019-10-30,corruption,0.2089986503124237,fraud,0.13030770421028137,counterfeit money,0.10064122080802917
+Tor,wekhiu48,1178,got banned darknetmarkets simply trying help crosspost,2020-01-09,2019-05-24 00:00:00,1355.0,342.0,wekhiu48,1178,"***LINK***Just got banned from darknetmarkets for simply trying to help[/post/ba45c85da046fabef089]***LINK***
+														by ***LINK***/u/wekhiu48[/u/wekhiu48]***LINK*** • 3 weeks ago in ***LINK***/d/antiforensics[/d/antiforensics]***LINK***
+														2 points • ***LINK***36 comments[/post/ba45c85da046fabef089]***LINK***",2019-10-30,tor problems,0.2115376889705658,hacking,0.157266765832901,update site,0.06722472608089447
+Tor,Syndicate,33036,hiring Shadow Simulation Developer,2019-11-06,1900-01-01 00:00:00,0.0,0.0,Syndicate,33036,"We are seeking an experienced programmer to help us develop cutting-edge network simulation / emulation software. This person will be responsible for the implementation, documentation, and testing of software to support research into privacy-enhancing technologies. In particular, this person will be contributing to software that constructs large, realistic, high fidelity simulations of anonymity networks, allowing other researchers to run existing software (e.g., Tor) on top of a virtualized network. As such, this person should be comfortable working with established codebases (github.com/shadow) and incrementally improving them through modular design.
+
+The ideal candidate will have significant practical programming skills, specifically, expertise in parallel program design and development.
+
+For programming experience we seek a candidate with demonstrated ability to write correct, maintainable code in both Python and C. Experience with Rust, or a strong desire to learn to program in Rust, is preferred. In addition to high familiarity with parallel programming, the candidate will possess knowledge of the Linux operating system, networking, and algorithms at the BS level or higher. The candidate should be able to work both independently and as part of a small team, with strong communication skills and the ability to read and understand research papers and other technical documents.
+
+The person in this position will work as part of a small cross-organizational development team, along with another simulation developer working in Micah Sherr's SecurityLab at Georgetown University. Rob Jansen at the U.S. Naval Research Laboratory will oversee and lead the team, however, the person in this position is integrated into the Tor Project Community through working with its Network Team.
+
+The ideal candidate will be based in the Washington DC area (in which case we will try to get you a desk at Georgetown University). However, we will be considering remote candidates.
+
+This position has full-time funding for three years, with the possibility to continue in another role thereafter, depending on organizational finances.
+
+***LINK***Read the listing for more info and how to apply[https://www.torproject.org/about/jobs/shadow-simulation-developer/]***LINK***.",2019-11-06,tor problems,0.1111874207854271,hacking,0.09276891499757767,update site,0.05427102372050285
+Tor,Alice,4,New release tor browser,2020-01-09,2018-02-17 00:00:00,296.0,400.0,Alice MOD,3780,"September 5th, 2018 a new updated Tor Browser was released. 
+
+Release Announcement: 
+https://blog.torproject.org/new-release-tor-browser-80
+
+Download Link:
+https://www.torproject.org/download/download-easy.html.en",2019-08-06,update site,0.08622922003269196,fraud,0.07193349301815033,tor problems,0.0632256418466568
+Tor,JACKJACK,404,Onion Service operator mitigate DDoS Attacks article,2020-01-09,2018-04-10 00:00:00,2129.0,681.0,JACKJACK,404,"Since late last October 2018, onion service operators have been on the receiving end of numerous DoS and DDoS attacks, both on the deep web onion service and also on the clear net websites.
+The Dos and DDoS attacks have generally alternated between the deep web and the clear net over the span of a couple of days and as things stand now, the motivation behind the attacks are anyone’s guesses.
+
+Definition of Terms
+
+DoS means Denial of Service. Typically, a DoS attack involves the flooding of a server or network with traffic from a single device as a way of drastically crippling the website and making it unable to serve legitimate traffic.
+Depending on the magnitude of the attack and the capabilities of the server or network, the flooding often gets too overwhelming and forces the website to go offline for a period ranging from a few hours to months.
+DDoS stands for Distributed Denial of Service. Like DoS attacks, it seeks to cripple the target’s server by sending it tons of traffic.
+Your TOR usage is being watched
+
+Unlike DoS, however, DDoS deploys several devices from all over the internet, DDoS usually infected with malware to serve that exact same purpose, to launch the attacks to the specific server or network.
+
+As such, they can be quite a headache to handle for onion service operators.
+
+
+Attacks Utilize Onion Services’ Only Weakness
+ddos presented in the form of binary code 3d illustration
+Mitigating DDoS Attacks Against Your Onion Service.
+
+When carried out properly, DoS and DDoS attacks are very effective ways to bring down a victim’s server and consequently disrupt their services or halt their operations for a period of time.
+Ironically, it is much easier to block DDoS and DoS attacks on clearnet websites than it is for onion services to mitigate them.
+This is because in clearnet websites one is able to access individual connection information such as IP addresses and geographic locations, single them out, drop the connection(s) and prevent it from reconnecting.
+
+For onion services, however, this is a luxury they cannot afford.
+
+Simply put, the design of onion services that prevents them from accessing individual connection information becomes a flaw when it comes to mitigating DDoS and DoS attacks because it is impossible to single out an IP address or a geographic location.
+
+There is only one connection that can be seen by the server and block it means blocking out everybody else using it, which is exactly what the attackers want anyway.
+
+How Can Onion Servers Prevent/Deal with DDoS and DoS Attacks?
+
+Seeing that the DoS and DDoS attacks rely on overwhelming both the resources of your network and the capabilities of your server, upgrading them will help to significantly reduce the impact of the resource-limiting DDoS and DoS attacks.DDoS attacks especially seem to target the network speed of onion services more than anything.As a result, there are hardly any performance tweaks to be undertaken that can reduce the impact of a DDoS attack that focuses mainly on disabling the network speeds.Onion services can, however, adopt a number of safety and counter-measures to ensure that they survive DDoS and DoS attacks.
+
+1. Constantly Update Your System
+
+Getting on the mailing list for services such as Tor is important for onion services.
+This is because recent upgrades often address some of the biggest vulnerabilities of the onion router and you would be on the safer side if you got the upgrades as soon as possible.
+Tor’s most recent release 0.2.8.9 for example, came as a relief for many users as it fixed a crucial weakness that was being utilized by remote hackers.
+
+2. Upgrade Your Software as Well crucial 
+
+Most onion service operators fail to see the simple yet vital importance of upgrading their services.
+A powerful server can only do as much when it comes to withstanding heavy influxes of traffic, but improving the software as well can also help mitigate heavy DDoS attacks.
+Some of the recommended upgrades include Nginx for apache users, and PHP 7 from the much slower PHP 5.6 in order to triple server response capabilities while reducing memory usage.
+
+3Monitor Your Information Logs
+
+Logs will help you identify deficiencies with pinpoint accuracy and provide insight on the type of configuration you can go in to make things run a bit smoother.
+In the event of Dos and DDoS attack, onion service operators should also avoid piling on to the problem by rate limiting or using code solutions, as these often result in the failing of the server.
+
+4. Tor Limits Bandwidth During the First Few Months
+
+When onion service operators introduce their sites to Tor, it gradually increases the site traffic over time, meaning that it might take a while before your network usage picks up speed.
+Using anti-bot repellents is one effective way for users to speed up the process and enjoy full network usage sooner.
+To summarize, the best an onion service operator can do to mitigate DDoS and DoS attacks is to improve their service in anticipation of an attack so that they can absorb as much of the influx of traffic as possible without shutting down operations.",2019-08-06,tor problems,0.15086138248443604,hacking,0.13126292824745178,find vendor,0.06124252825975418
+Tor,Witchman05,9,New release tor browser,2020-01-09,2018-04-19 00:00:00,10406.0,4790.0,Witchman05 M,1027,"Formatting is slightly awkward to read, sorry for that, but you can see the properly-formatted version on the Tor Project blog.",2018-10-24,update site,0.08622922003269196,fraud,0.07193349301815033,tor problems,0.0632256418466568
+Tor,Witchman05,9,New release tor browser,2020-01-09,2018-04-19 00:00:00,10406.0,4790.0,Witchman05 M,1027,"From the ***LINK***Tor Project Blog[https://blog.torproject.org/new-release-tor-browser-85a4]***LINK***:
+
+
+Tor Browser 8.5a4 is now available from the Tor Browser Project page and also from our distribution directory.
+
+This release features important security updates to Firefox.
+
+Highlights in Tor Browser 8.5a4 are a new Tor alpha version, 0.3.5.3-alpha, a fixed layout of our macOS installer window and Stylo (Mozilla's new CSS engine) being enabled on macOS after fixing a reproducibility issues. Please report any problems you find with those macOS related changes as we think about backporting them for the stable series.
+
+Moreover, we backport a defense against protocol handler enumeration developed by Mozilla engineers and provide Tor Browser on all supported platforms in four additional locales: cs, el, hu, and ka.
+
+Note: It turned out it was a bit premature to ship the new locales as we did not catch bugs in them last minute, so we don't make them available on our download page. Sorry for the inconvenience.
+
+ 
+
+The full changelog since Tor Browser 8.5a3 is:
+
+-   All Platforms
+        Update Firefox to 60.3.0esr
+        Update Tor to 0.3.5.3-alpha
+        Update Torbutton to 2.1.1
+            Bug 23925+27959: Donation banner for year end 2018 campaign
+            Bug 24172: Donation banner clobbers Tor Browser version string
+            Bug 28082: Add locales cs, el, hu, ka
+            Translations update
+        Update Tor Launcher to 0.2.17
+            Bug 27994+25151: Use the new Tor Browser logo
+            Bug 28082: Add locales cs, el, hu, ka
+            Translations update
+        Update HTTPS Everywhere to 2018.9.19
+        Update NoScript to 10.1.9.9
+        Bug 1623: Block protocol handler enumeration (backport of fix for #680300)
+        Bug 27905: Fix many occurrences of ""Firefox"" in about:preferences
+        Bug 28082: Add locales cs, el, hu, ka
+-   Windows
+        Bug 21704: Abort install if CPU is missing SSE2 support
+        Bug 28002: Fix the precomplete file in the en-US installer
+ -  OS X
+        Bug 26263: App icon positioned incorrectly in macOS DMG installer window
+        Bug 26475: Fix Stylo related reproducibilitiy issue
+ -  Linux
+        Bug 26475: Fix Stylo related reproducibilitiy issue
+        Bug 28022: Use `/usr/bin/env bash` for bash invocation
+-   Android
+        Backport of fixes for bug 1448014, 1458905, 1441345, and 1448305
+    Build System
+        All Platforms
+            Bug 27218: Generate multiple Tor Browser bundles in parallel
+-       Windows
+            Bug 27320: Build certutil for Windows
+-       OS X
+            Bug 27320: Build certutil for macOS",2019-08-06,update site,0.08622922003269196,fraud,0.07193349301815033,tor problems,0.0632256418466568
+Tor,wheat920,3694,noscript defaulting ALL Options Enabled NOT save changed,2020-01-09,2019-03-08 00:00:00,25.0,4.0,boogknight,877,"If you're running Tails then yes, this will happen every time you reboot.  Fundamentally, we can't update the browser itself because persistence doesn't cover any changes to the core utilities, just the user's storage and settings. So you can change that setting all day long, but as soon as you reboot Tails, you are going to have to set it again.
+
+TBK
+***LINK***/d/tbk[/d/tbk]***LINK***",2019-04-02,tor problems,0.15505637228488922,find vendor,0.056706853210926056,gun,0.04643385484814644
+Tor,wheat920,3694,noscript defaulting ALL Options Enabled NOT save changed,2020-01-09,2019-03-08 00:00:00,25.0,4.0,wheat920,3694,"Something I have noticed the past few weeks: With the Tor Browser Bundle, all options on NoScript are enabled by default on the ""Default"" tab of preset customization.
+
+I've reinstalled, wiped out TBB and redownloaded and installed, wiped out the corresponding Firefox registry keys and reinstalled, but it persists....
+
+Also, if I close out of TBB and restart it, the options are re-enabled.
+
+Sup wit dat?  Anybody else notice this issue?
+
+I never seemed to have this happen before until past few weeks...",2019-08-06,tor problems,0.15505637228488922,find vendor,0.056706853210926056,gun,0.04643385484814644
+Tor,wekhiu48,1178,New Release Security Vulnerability wild tor browser crosspost,2020-01-09,2019-05-24 00:00:00,1355.0,342.0,wekhiu48,1178,"***LINK***New Release for Security Vulnerability in the wild Tor Browser 8.5.2[/post/39f1bc7bdd3afa863f97]***LINK***
+														by ***LINK***/u/wekhiu48[/u/wekhiu48]***LINK*** • 1 month ago in ***LINK***/d/antiforensics[/d/antiforensics]***LINK***
+														3 points • ***LINK***23 comments[/post/39f1bc7bdd3afa863f97]***LINK***",2019-08-06,tor problems,0.20877043902873993,update site,0.11259140074253082,hacking,0.06447222828865051
+Tor,smitty,3692,Does anyone know liberty market talking,2020-01-09,2019-05-31 00:00:00,8.0,0.0,smitty,3692,claiming tor is not doing it's job?,2019-08-06,tor problems,0.0984828844666481,counterfeit money,0.0919574573636055,trafficking,0.08318768441677094
+Tor,smitty,3692,Does anyone know liberty market talking,2020-01-09,2019-05-31 00:00:00,8.0,0.0,Witchman05 M,1027,"First, it's Libertas. Second, why not improvise, right? They don't want to be tracked down when they exit scam for a second time, do they?",2019-05-31,tor problems,0.0984828844666481,counterfeit money,0.0919574573636055,trafficking,0.08318768441677094
+Tor,gramps,3693,fight back leave tor running,2020-01-09,2019-05-05 00:00:00,65.0,1.0,gramps,3693,sure agents will hate you more for being anonymous and supporting anonymous. let their hate fuel you,2019-05-08,tor problems,0.13679325580596924,terrorism,0.1035957857966423,arson,0.09895806014537811
+Tor,gramps,3693,fight back leave tor running,2020-01-09,2019-05-05 00:00:00,65.0,1.0,gramps,3693,strength is in numbers,2019-08-06,tor problems,0.13679325580596924,terrorism,0.1035957857966423,arson,0.09895806014537811
+Tor,gramps,3693,fight back leave tor running,2020-01-09,2019-05-05 00:00:00,65.0,1.0,wekhiu48,1178,"you should leave tor running anyway because it will make it more difficult to fingerprint you and correlate the times that you are on tor and the times that you are not.  When you use tor for the majority of your web traffic, you will be helping yourself and helping everyone else by mixing in your traffic.",2019-05-30,tor problems,0.13679325580596924,terrorism,0.1035957857966423,arson,0.09895806014537811
+Tor,gramps,3693,fight back leave tor running,2020-01-09,2019-05-05 00:00:00,65.0,1.0,blikoo,38140,Is there somthing like tir that is not created by fbi ? Or goverment official.s,2019-09-16,tor problems,0.13679325580596924,terrorism,0.1035957857966423,arson,0.09895806014537811
+Tor,JACKJACK,404,everyone know,2020-01-09,2018-04-10 00:00:00,2129.0,681.0,JACKJACK,404,"disable javascript 
+
+about:config  -- accept risk when prompt
+search for java from true to false.",2019-08-06,sell drugs,0.050535161048173904,find vendor,0.04723634943366051,no crime,0.04452844709157944
+Tor,Alice,4,New release tor browser,2020-01-09,2018-02-17 00:00:00,296.0,400.0,Alice MOD,3780,"Update in browser or on the Tor Project's website!
+
+Changelog:
+Tor Browser 8.0.1 -- September 24 2018
+ * All platforms
+   * Update Tor to 0.3.4.8
+   * Update Torbutton to 2.0.7
+     * Bug 27097: Tor News signup banner
+     * Bug 27663: Add New Identity menuitem again
+     * Bug 26624: Only block OBJECT on highest slider level
+     * Bug 26555: Don't show IP address for meek or snowflake
+     * Bug 27478: Torbutton icons for dark theme
+     * Bug 27506+14520: Move status version to upper left corner for RTL locales
+     * Bug 27427: Fix NoScript IPC for about:blank by whitelisting messages
+     * Bug 27558: Update the link to ""Your Guard note may not change"" text
+     * Translations update
+   * Update Tor Launcher to 0.2.16.6
+     * Bug 27469: Adapt Moat URLs
+     * Translations update
+     * Clean-up
+   * Update NoScript to 10.1.9.6
+   * Bug 27763: Restrict Torbutton signing exemption to mobile
+   * Bug 26146: Spoof HTTP User-Agent header for desktop platforms
+   * Bug 27543: QR code is broken on web.whatsapp.com
+   * Bug 27264: Bookmark items are not visible on the boomark toolbar
+   * Bug 27535: Enable TLS 1.3 draft version
+   * Backport of Mozilla bug 1490585, 1475775, and 1489744
+ * OS X
+   * Bug 27482: Fix crash during start-up on macOS 10.9.x systems
+ * Linux
+   * Bug 26556: Fix broken Tor Browser icon path on Linux",2019-08-06,update site,0.08622922003269196,fraud,0.07193349301815033,tor problems,0.0632256418466568
+Tor,wekhiu48,1178,Tor Bug Smash Fund Month crosspost,2020-01-09,2019-05-24 00:00:00,1355.0,342.0,wekhiu48,1178,"***LINK***Tor Bug Smash Fund Month![/post/7e8bcb6b5ad890b57c8b]***LINK***
+														by ***LINK***/u/wekhiu48[/u/wekhiu48]***LINK*** • 3 days ago in ***LINK***/d/DarkNetMarkets[/d/DarkNetMarkets]***LINK***
+														4 points • ***LINK***6 comments[/post/7e8bcb6b5ad890b57c8b]***LINK***",2019-08-06,tor problems,0.1828293651342392,hacking,0.1478136032819748,update site,0.12421246618032455
+Tor,wekhiu48,1178,Make sure running Tor Browser crosspost,2020-01-09,2019-05-24 00:00:00,1355.0,342.0,wekhiu48,1178,"***LINK***Make Sure you are running Tor Browser 8.5.3[/post/3e63420b39be3a8e1ec2]***LINK***
+														by ***LINK***/u/wekhiu48[/u/wekhiu48]***LINK*** • 1 month ago in ***LINK***/d/antiforensics[/d/antiforensics]***LINK***
+														5 points • ***LINK***14 comments[/post/3e63420b39be3a8e1ec2]***LINK***",2019-08-06,update site,0.12548014521598816,hacking,0.09146206080913544,find vendor,0.05966968089342117
+Tor,Guardian,46569,possible use Tor iOS securely,2020-01-09,2020-01-02 00:00:00,13.0,2.0,Guardian,46569,"Of course, there's like 100 different apps for it, but I only want to use a Tor app that I can side-load and verify myself. I don't want to trust anything I can't check myself. Does anyone know any ways to do this, or should I just stick to desktop?",2020-01-09,hacking,0.14900389313697815,find vendor,0.06792966276407242,no crime,0.05729606747627258
+Tor,Guardian,46569,possible use Tor iOS securely,2020-01-09,2020-01-02 00:00:00,13.0,2.0,Gratefuldeadbear,15566,Desktop,2020-01-04,hacking,0.14900389313697815,find vendor,0.06792966276407242,no crime,0.05729606747627258
+Tor,Guardian,46569,possible use Tor iOS securely,2020-01-09,2020-01-02 00:00:00,13.0,2.0,malibuu,2,"No secure way. Any app will require resources from the os, which are inherently insecure.",2020-01-04,hacking,0.14900389313697815,find vendor,0.06792966276407242,no crime,0.05729606747627258
+cryptomining,Scientist,46957,Free electricity,2020-01-09,1900-01-01 00:00:00,0.0,0.0,Scientist,46957,"I am renting an office with free electricity. 
+My research gave me the impression that mining would still be unprofitable.
+Am I correct in that assumption?",2020-01-09,no crime,0.1946193277835846,gun,0.09879235923290253,find vendor,0.07340146601200104
+cryptomining,Freeman8701,46956,hi newbie,2020-01-09,1900-01-01 00:00:00,0.0,0.0,Freeman8701,46956,Any advise on how to mine btc using an android mobile device??,2020-01-09,update site,0.0662224292755127,counterfeit money,0.05625837668776512,tor problems,0.055792082101106644
+cryptomining,anonas,40798,real mining,2020-01-09,1900-01-01 00:00:00,0.0,0.0,blonger,32544,"You will not find any legit ""online miner"" (browser mining) in the darknet.
+The website you choosed will tell you after a few seconds that you should send them some money so that they can ""cash out"".
+
+Even the clearnet ones are more or less scams or require such a high payout amount which you will never reach through simple browser mining.
+
+Bury the idea of making money with mining as long as you dont have a mining rig with some ASICS or graphic cards.",2019-12-29,tor problems,0.12570545077323914,stolen goods,0.0732860192656517,corruption,0.06072494015097618
+cryptomining,anonas,40798,real mining,2020-01-09,1900-01-01 00:00:00,0.0,0.0,bitcoinbuyer,40836,This is not a miner.... and of course its fake,2019-12-29,tor problems,0.12570545077323914,stolen goods,0.0732860192656517,corruption,0.06072494015097618
+cryptomining,anonas,40798,real mining,2020-01-09,1900-01-01 00:00:00,0.0,0.0,anonas,40798,"http://mpo2ut37vuzk2is56bwrhaxplyakacrmp3zgofcgfoeqkzwkq22vidyd.onion/
+
+HELLO. I JUST FIND THIS MINING IS IT REAL ?",2019-12-29,tor problems,0.12570545077323914,stolen goods,0.0732860192656517,corruption,0.06072494015097618
+cryptomining,bartsimpson69,3579,best coin mine system,2020-01-09,2018-09-08 00:00:00,50.0,8.0,luchenz,91,"Aeon and maybe monero, but aeon is better in my opinion for mining in PC games.",2018-11-03,hacking,0.0837555080652237,find vendor,0.06969539821147919,stolen goods,0.057250238955020905
+cryptomining,bartsimpson69,3579,best coin mine system,2020-01-09,2018-09-08 00:00:00,50.0,8.0,bartsimpson69,3579,Im going with AEON long holding for big gamble in hopes it goes up over few years,2018-10-05,hacking,0.0837555080652237,find vendor,0.06969539821147919,stolen goods,0.057250238955020905
+cryptomining,bartsimpson69,3579,best coin mine system,2020-01-09,2018-09-08 00:00:00,50.0,8.0,Zarok,1024,Are you looking at shorting or long term?,2018-09-15,hacking,0.0837555080652237,find vendor,0.06969539821147919,stolen goods,0.057250238955020905
+cryptomining,bartsimpson69,3579,best coin mine system,2020-01-09,2018-09-08 00:00:00,50.0,8.0,Synchronizer,84,AEON.,2018-09-20,hacking,0.0837555080652237,find vendor,0.06969539821147919,stolen goods,0.057250238955020905
+cryptomining,bartsimpson69,3579,best coin mine system,2020-01-09,2018-09-08 00:00:00,50.0,8.0,bartsimpson69,3579,"I have 1080ti, i7 4790k what u think would be the most profitable coin to run on my system, Or coins that u think could go up in value in the future and are worth mining on my system",2019-08-06,hacking,0.0837555080652237,find vendor,0.06969539821147919,stolen goods,0.057250238955020905
+cryptomining,kal_mercer204,604,monero mining,2020-01-09,2018-06-30 00:00:00,96.0,1.0,drabmax,1529,"Yo, I PM'd you. Keep checking this sub I'm going to be posting a few methods regarding XMR mining.",2019-01-20,tor problems,0.11597844958305359,fraud,0.09075532853603363,stolen goods,0.08124600350856781
+cryptomining,kal_mercer204,604,monero mining,2020-01-09,2018-06-30 00:00:00,96.0,1.0,kal_mercer204,604,"hi,guys i'm new to mining.
+i would like mine Monero in system (PC).
+if anyone already made this or familiar with this.
+
+Guide me which is reliable and how set it up.",2019-08-06,tor problems,0.11597844958305359,fraud,0.09075532853603363,stolen goods,0.08124600350856781
+cryptomining,kal_mercer204,604,monero mining,2020-01-09,2018-06-30 00:00:00,96.0,1.0,heyuguys,3589,"What do you mean by in system? What is your current mining rig setup? Other wise all you need to do is download their wallet and then download mining software like XMR-stak or any crytponight-V8 software. Once you have that change the config to mine to your wallet and add a mining pool.
+
+http://moneropools.com/
+https://github.com/fireice-uk/xmr-stak/releases
+https://coinguides.org/xmr-stak-cryptonight-miner-v7/ (old algo and software but still decent guide.)",2018-11-23,tor problems,0.11597844958305359,fraud,0.09075532853603363,stolen goods,0.08124600350856781
+cryptomining,MJA20WithA3,22,Pointless mine BTC nowadays without thousand equipment Monero worth mining still,2020-01-09,2018-02-16 00:00:00,3848.0,1958.0,MJA20WithA3,22,"I know it's a smaller in terms of broad popularity crypto right now, but am unsure what I'd get back from mining in my free time.",2019-08-06,tor problems,0.11407945305109024,counterfeit money,0.07757420837879181,stolen goods,0.07270678132772446
+cryptomining,MJA20WithA3,22,Pointless mine BTC nowadays without thousand equipment Monero worth mining still,2020-01-09,2018-02-16 00:00:00,3848.0,1958.0,AJp0KZTiBIo4vpXw7,586,"It's profitable, but not as much as say Ethereum or other Ethash-algo-based coins. You may want to wait until the Monero fork in April, given the network has some ASICs on it.
+
+If you're doing it in your free-time, go for it. Keep in mind, if you have an NVIDIA card, it won't make as much as an AMD card. If you're CPU mining, profitability is iffy. I think some AMD Ryzen CPUs can profitably mine Monero.",2018-03-27,tor problems,0.11407945305109024,counterfeit money,0.07757420837879181,stolen goods,0.07270678132772446
+cryptomining,PussyVogon,3581,dn xmr pool daemon,2020-01-09,2018-03-26 00:00:00,8.0,7.0,PussyVogon,3581,"Hello,
+
+Does anyone know about any XMR pools listening on tor/i2p addresses (ex.one posted on moneroworld?).
+
+tia",2019-08-06,hacking,0.10249973833560944,fraud,0.07291866093873978,tor problems,0.0662279799580574
+cryptomining,PussyVogon,3581,dn xmr pool daemon,2020-01-09,2018-03-26 00:00:00,8.0,7.0,AJp0KZTiBIo4vpXw7,586,"For daemon remote nodes, I'd suggest not relying on remote nodes anyway.
+
+As for pools, I'll keep an eye, but I haven't seen or heard of any.",2018-03-26,hacking,0.10249973833560944,fraud,0.07291866093873978,tor problems,0.0662279799580574

@@ -5,6 +5,18 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag, word_tokenize, ne_chunk
+from sentence_transformers import SentenceTransformer, util
+from keybert import KeyBERT
+from sklearn.manifold import TSNE
+import umap
+import hdbscan
+from sklearn.cluster import AgglomerativeClustering
+import logging
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -120,3 +132,334 @@ def remove_single_characters(text):
     :return: the text with single characters removed
     """
     return re.sub(r'\b\w\b\s*', '', text)
+
+
+def zero_shot_process_threads(df, pipe, list_intents, output_file, label='name_thread'):
+    """
+    Process the threads in the DataFrame using the zero-shot classification pipeline.
+    :param df: DataFrame containing the threads to process
+    :param pipe: Zero-shot classification pipeline
+    :param list_intents: List of intents to classify
+    :param output_file: Path to the output CSV file
+    :return: DataFrame with top 3 labels and scores for each thread
+    """
+    # Add columns for top words and their respective scores
+    for i in range(1, 4):
+        df[f'top_label_{i}'] = None
+        df[f'top_score_{i}'] = None
+
+    # Dictionary to store already processed threads
+    cache = {}
+    
+    # Extract unique name_thread values
+    unique_threads = df[label].unique()
+
+    for idx, thread_text in enumerate(tqdm(unique_threads, desc='Processing unique threads')):
+        if thread_text in cache:
+            continue
+        else:
+            # Process new threads using the pipe function
+            result = pipe(thread_text, list_intents)
+            
+            if result['labels']:
+                sorted_labels = sorted(result['labels'], key=lambda x: result['scores'][result['labels'].index(x)], reverse=True)
+                top_labels = sorted_labels[:3]
+                top_scores = [result['scores'][result['labels'].index(label)] for label in top_labels]
+            else:
+                top_labels = [None, None, None]
+                top_scores = [None, None, None]
+            
+            # Cache the results
+            cache[thread_text] = (top_labels, top_scores)
+        
+        # Save to CSV every 10000 records
+        if (idx + 1) % 10000 == 0:
+            df.to_csv(output_file, index=False)
+
+    # Assign results to the appropriate columns
+    for index, row in df.iterrows():
+        thread_text = str(row[label])
+        top_labels, top_scores = cache[thread_text]
+        for i in range(3):
+            df.at[index, f'top_label_{i+1}'] = top_labels[i]
+            df.at[index, f'top_score_{i+1}'] = top_scores[i]
+
+    # Final save to CSV
+    df.to_csv(output_file, index=False)
+
+    return df
+
+
+def extract_top_keywords_tfidf(df, num_keywords=3):
+    """
+    Extract the top keywords from the threads using TF-IDF.
+    :param df: DataFrame containing the threads to process
+    :param num_keywords: Number of top keywords to extract
+    :return: DataFrame with top keywords for each thread
+    """
+    # Initialize TF-IDF Vectorizer
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(df['name_thread'])
+
+    # Get feature names
+    feature_names = vectorizer.get_feature_names_out()
+
+    # Add columns for top keywords
+    for i in range(1, num_keywords + 1):
+        df[f'top_keyword_{i}'] = None
+
+    # Extract top keywords for each thread
+    for index in tqdm(range(len(df)), total=len(df), desc='Extracting top keywords'):
+        tfidf_vector = tfidf_matrix[index]
+        sorted_indices = tfidf_vector.toarray().argsort()[0][-num_keywords:][::-1]
+        top_keywords = [feature_names[i] for i in sorted_indices]
+
+        for i in range(num_keywords):
+            df.at[index, f'top_keyword_{i+1}'] = top_keywords[i]
+
+    return df
+
+
+class TextClustering:
+    """
+    Class for clustering text data using SentenceTransformer and UMAP or t-SNE.
+    """
+    def __init__(self, data_filtered, text_column):
+        """
+        Initialize the TextClustering class.
+        :param data_filtered: the filtered data
+        :param text_column: the column containing the text data
+        """
+        self.data_filtered = data_filtered
+        self.text_column = text_column
+        self.corpus = self.load_corpus()
+        self.corpus_embeddings = None
+        self.logger = self.initialize_logger()
+
+    def initialize_logger(self):
+        """
+        Initialize the logger for the class.
+        """
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        return logger
+
+    def load_corpus(self):
+        """
+        Load and preprocess the corpus.
+        :return: the preprocessed corpus
+        """
+        corpus = self.data_filtered[self.text_column].tolist()
+        corpus = [x.lower() for x in corpus]
+        return corpus
+
+    def encode_corpus(self, model, batch_size):
+        """
+        Compute embeddings for the sentences.
+        :param model: the SentenceTransformer model to use
+        :param batch_size: the batch size for encoding
+        :return: the embeddings of the corpus
+        """
+        self.logger.info("Encoding the corpus. This might take a while.")
+        self.corpus_embeddings = model.encode(self.corpus, batch_size=batch_size, show_progress_bar=True, convert_to_tensor=True)
+        return self.corpus_embeddings
+
+    def normalize_embeddings(self):
+        """
+        Normalize embeddings to unit length.
+        :return: the normalized embeddings
+        """
+        return self.corpus_embeddings / np.linalg.norm(self.corpus_embeddings, axis=1, keepdims=True)
+
+    def reduce_dimensionality(self, n_neighbors=15, n_components=10):
+        """
+        Reduce dimensionality of embeddings with UMAP.
+        :param n_neighbors: the number of neighbors to consider
+        :param n_components: the number of components to reduce to
+        :return: the reduced embeddings
+        """
+        self.logger.info("Performing dimensionality reduction with UMAP")
+        reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
+        return reducer.fit_transform(self.corpus_embeddings)
+
+    def reduce_dimensionality_tsne(self, n_components=2, perplexity=30, n_iter=1000):
+        """
+        Reduce dimensionality of embeddings with t-SNE.
+        :param n_components: the number of components to reduce to
+        :param perplexity: the perplexity value
+        :param n_iter: the number of iterations
+        :return: the reduced embeddings
+        """
+        self.logger.info("Performing dimensionality reduction with t-SNE")
+        tsne = TSNE(n_components=n_components, perplexity=perplexity, n_iter=n_iter, metric='cosine')
+        return tsne.fit_transform(self.corpus_embeddings)
+
+    def perform_community_detection(self, min_community_size=10, threshold=0.7):
+        """
+        Perform clustering with community_detection.
+        :param min_community_size: the minimum size of a community
+        :param threshold: the threshold to consider for community detection
+        :return: the clusters
+        """
+        self.logger.info("Starting clustering with community_detection")
+        clusters = util.community_detection(self.corpus_embeddings, min_community_size=min_community_size, threshold=threshold)
+        return clusters
+
+    def perform_agglomerative_clustering(self, cluster_embeddings, n_clusters=10):
+        """
+        Perform Agglomerative Clustering on embeddings.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param n_clusters: the number of clusters
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with Agglomerative Clustering")
+        clustering_model = AgglomerativeClustering(n_clusters=n_clusters)
+        clustering_model.fit(cluster_embeddings)
+        cluster_assignment = clustering_model.labels_
+        clusters = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(self.corpus[sentence_id])
+        return clusters, cluster_assignment
+
+    def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples):
+        """
+        Perform HDBSCAN on embeddings.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param min_cluster_size: the minimum cluster size
+        :param min_samples: the minimum number of samples
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with HDBSCAN")
+        clustering_model = hdbscan.HDBSCAN(min_cluster_size=max(1, int(len(self.data_filtered) * min_cluster_size)), min_samples=min_samples)
+        clustering_model.fit(cluster_embeddings)
+        cluster_assignment = clustering_model.labels_
+        clusters = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            if cluster_id == -1:
+                # Ignore noise points
+                continue
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(self.corpus[sentence_id])
+        return clusters, cluster_assignment
+
+    def plot_clusters(self, embeddings_2d, cluster_labels):
+        """
+        Visualize clusters in 2D as dots.
+        :param embeddings_2d: the 2D embeddings
+        :param cluster_labels: the labels of the clusters
+        """
+        plt.figure(figsize=(10, 8))
+        unique_labels = set(cluster_labels)
+        # Generate a different color for each cluster
+        colors = plt.cm.rainbow(np.linspace(0, 1, len(unique_labels)))
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Color for noise (cluster -1)
+                col = 'k'
+                marker = 'x'
+            else:
+                marker = 'o'
+            class_member_mask = (cluster_labels == k)
+            xy = embeddings_2d[class_member_mask]
+            plt.plot(xy[:, 0], xy[:, 1], marker, markerfacecolor=col, markeredgecolor='k', markersize=6, alpha=0.6, label=f'Cluster {k}')
+        plt.title('2D Cluster Visualization')
+        plt.xlabel('Dimension 1')
+        plt.ylabel('Dimension 2')
+        plt.legend()
+        plt.show()
+
+    def show_name_clusters(self, cluster, model):
+        """
+        Show the names of the clusters.
+        :param cluster: the cluster to show the names of
+        :param model: the SentenceTransformer model to use
+        :return: the top and bottom words of the clusters
+        """
+        used = []
+        kw_model = KeyBERT(model=model)
+        doc = ""
+        for sentence_id in cluster:
+            doc += str(self.corpus[sentence_id]) + " "
+            used.append(sentence_id)
+        print("--------------------")
+        print(kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None))
+        n_1_topics_ = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None)
+        n_2_topics_ = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None)
+        print(n_2_topics_)
+        print("--------------------")
+        return n_1_topics_, n_2_topics_, used
+
+    def summarize(self, clusters, n_words, keybert_model):
+        """
+        Summarize the clusters with top and bottom words.
+        :param clusters: the clusters to summarize
+        :param n_words: the number of words to show
+        :param keybert_model: the KeyBERT model to use
+        :return: the summarized clusters
+        """
+        results = {}
+        self.logger.info("Extracting keywords from final clusters")
+        for cluster_id, cluster in clusters.items():
+            self.logger.info("\nCluster {}, #{} Elements".format(cluster_id, len(cluster)))
+            n_1_topics_, n_2_topics_, used = self.show_name_clusters(cluster, keybert_model)
+            results[cluster_id] = {}
+            for i, sentence_id in enumerate(cluster[:n_words]):
+                try:
+                    if i < 3:
+                        self.logger.info("\t" + sentence_id)
+                    results[cluster_id][f'top_{i}'] = sentence_id
+                except Exception as e:
+                    self.logger.error(f"Error processing top_{i} of cluster {cluster_id}: {e}")
+                    continue
+            for i, sentence_id in enumerate(cluster[-n_words:]):
+                try:
+                    if i < 3:
+                        self.logger.info("\t" + sentence_id)
+                    results[cluster_id][f'bottom_{i}'] = sentence_id
+                except Exception as e:
+                    self.logger.error(f"Error processing bottom_{i} of cluster {cluster_id}: {e}")
+                    continue
+        return pd.DataFrame(results).T
+
+    def main(self, name_model, batch_size=32, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, min_cluster_size=0.02, min_samples=None):
+        """
+        Main function to cluster text data.
+        :param name_model: the name of the SentenceTransformer model to use
+        :param batch_size: the batch size for encoding
+        :param exec_reduction: whether to execute dimensionality reduction
+        :param reduction: the reduction technique to use
+        :param n_neighbors: the number of neighbors to consider for UMAP
+        :param n_components_umap: the number of components to reduce to with UMAP
+        :param n_words: the number of words to show in the summary
+        :param n_components: the number of components to reduce to with t-SNE
+        :param perplexity: the perplexity value for t-SNE
+        :param n_iter: the number of iterations for t-SNE
+        :param n_clusters: the number of clusters to create
+        :param hdbscan: whether to use HDBSCAN for clustering
+        :param min_cluster_size: the minimum cluster size for HDBSCAN
+        :param min_samples: the minimum number of samples for HDBSCAN
+        :return: the summarized clusters
+        """
+        model = SentenceTransformer(name_model)
+        self.encode_corpus(model, batch_size=batch_size)
+        if exec_reduction:
+            if reduction == 'UMAP':
+                red_embeddings = self.reduce_dimensionality(n_neighbors=n_neighbors, n_components=n_components_umap)
+            else:
+                red_embeddings = self.reduce_dimensionality_tsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
+        else:
+            red_embeddings = self.corpus_embeddings
+        self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
+        if hdbscan:
+            clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples)
+        else:
+            clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters)
+        self.plot_clusters(red_embeddings, cluster_assignment)
+        return self.summarize(clusters, n_words, name_model)
