@@ -143,7 +143,7 @@ def zero_shot_process_threads(df, pipe, list_intents, output_file, label='name_t
     :param output_file: Path to the output CSV file
     :return: DataFrame with top 3 labels and scores for each thread
     """
-    # Add columns for top words and their respective scores
+    # Add columns for top labels and their respective scores
     for i in range(1, 4):
         df[f'top_label_{i}'] = None
         df[f'top_score_{i}'] = None
@@ -155,9 +155,7 @@ def zero_shot_process_threads(df, pipe, list_intents, output_file, label='name_t
     unique_threads = df[label].unique()
 
     for idx, thread_text in enumerate(tqdm(unique_threads, desc='Processing unique threads')):
-        if thread_text in cache:
-            continue
-        else:
+        if thread_text not in cache:
             # Process new threads using the pipe function
             result = pipe(thread_text, list_intents)
             
@@ -174,15 +172,17 @@ def zero_shot_process_threads(df, pipe, list_intents, output_file, label='name_t
         
         # Save to CSV every 10000 records
         if (idx + 1) % 10000 == 0:
-            df.to_csv(output_file, index=False)
+            df_intermediate = df[df[label].isin(cache.keys())]
+            df_intermediate.to_csv(f"{output_file}_{(idx + 1) // 10000}.csv", index=False)
 
     # Assign results to the appropriate columns
-    for index, row in df.iterrows():
+    for index, row in tqdm(df.iterrows(), total=df.shape[0], desc='Assigning results to DataFrame'):
         thread_text = str(row[label])
-        top_labels, top_scores = cache[thread_text]
-        for i in range(3):
-            df.at[index, f'top_label_{i+1}'] = top_labels[i]
-            df.at[index, f'top_score_{i+1}'] = top_scores[i]
+        if thread_text in cache:
+            top_labels, top_scores = cache[thread_text]
+            for i in range(3):
+                df.at[index, f'top_label_{i+1}'] = top_labels[i]
+                df.at[index, f'top_score_{i+1}'] = top_scores[i]
 
     # Final save to CSV
     df.to_csv(output_file, index=False)
