@@ -242,10 +242,14 @@ class TextClustering:
         """
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+
+        # Check if the logger already has handlers
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        
         return logger
 
     def load_corpus(self):
@@ -268,12 +272,13 @@ class TextClustering:
         self.corpus_embeddings = model.encode(self.corpus, batch_size=batch_size, show_progress_bar=True, convert_to_tensor=True)
         return self.corpus_embeddings
 
-    def normalize_embeddings(self):
+    def normalize_embeddings(self, embeddings):
         """
         Normalize embeddings to unit length.
+        :param embeddings: the embeddings to normalize
         :return: the normalized embeddings
         """
-        return self.corpus_embeddings / np.linalg.norm(self.corpus_embeddings, axis=1, keepdims=True)
+        return embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
 
     def reduce_dimensionality(self, n_neighbors=15, n_components=10):
         """
@@ -324,7 +329,7 @@ class TextClustering:
         for sentence_id, cluster_id in enumerate(cluster_assignment):
             if cluster_id not in clusters:
                 clusters[cluster_id] = []
-            clusters[cluster_id].append(self.corpus[sentence_id])
+            clusters[cluster_id].append(sentence_id)
         return clusters, cluster_assignment
 
     def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples):
@@ -346,7 +351,7 @@ class TextClustering:
                 continue
             if cluster_id not in clusters:
                 clusters[cluster_id] = []
-            clusters[cluster_id].append(self.corpus[sentence_id])
+            clusters[cluster_id].append(sentence_id)
         return clusters, cluster_assignment
 
     def plot_clusters(self, embeddings_2d, cluster_labels):
@@ -398,7 +403,7 @@ class TextClustering:
 
     def summarize(self, clusters, n_words, keybert_model):
         """
-        Summarize the clusters with top and bottom words.
+        Summarize the clusters with top and bottom words and include cluster size percentage.
         :param clusters: the clusters to summarize
         :param n_words: the number of words to show
         :param keybert_model: the KeyBERT model to use
@@ -406,26 +411,35 @@ class TextClustering:
         """
         results = {}
         self.logger.info("Extracting keywords from final clusters")
+        total_elements = sum(len(cluster) for cluster in clusters.values())
+
         for cluster_id, cluster in clusters.items():
             self.logger.info("\nCluster {}, #{} Elements".format(cluster_id, len(cluster)))
             n_1_topics_, n_2_topics_, used = self.show_name_clusters(cluster, keybert_model)
-            results[cluster_id] = {}
+            
+            cluster_size_percentage = (len(cluster) / total_elements) * 100
+            results[cluster_id] = {
+                'size_percentage': cluster_size_percentage,
+                'n_1_topics': n_1_topics_,
+                'n_2_topics': n_2_topics_
+            }
+            
             for i, sentence_id in enumerate(cluster[:n_words]):
                 try:
-                    if i < 3:
-                        self.logger.info("\t" + sentence_id)
-                    results[cluster_id][f'top_{i}'] = sentence_id
+                    sentence = self.corpus[sentence_id]
+                    results[cluster_id][f'top_{i}'] = sentence
                 except Exception as e:
                     self.logger.error(f"Error processing top_{i} of cluster {cluster_id}: {e}")
                     continue
+            
             for i, sentence_id in enumerate(cluster[-n_words:]):
                 try:
-                    if i < 3:
-                        self.logger.info("\t" + sentence_id)
-                    results[cluster_id][f'bottom_{i}'] = sentence_id
+                    sentence = self.corpus[sentence_id]
+                    results[cluster_id][f'bottom_{i}'] = sentence
                 except Exception as e:
                     self.logger.error(f"Error processing bottom_{i} of cluster {cluster_id}: {e}")
                     continue
+
         return pd.DataFrame(results).T
 
     def main(self, name_model, batch_size=32, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, min_cluster_size=0.02, min_samples=None):
@@ -462,4 +476,10 @@ class TextClustering:
         else:
             clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters)
         self.plot_clusters(red_embeddings, cluster_assignment)
-        return self.summarize(clusters, n_words, name_model)
+        
+        # Associating clusters with original DataFrame entries
+        cluster_df = self.data_filtered.copy()
+        cluster_df['cluster'] = cluster_assignment
+        
+        summarized_clusters = self.summarize(clusters, n_words, name_model)
+        return summarized_clusters, cluster_df
