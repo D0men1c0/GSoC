@@ -505,4 +505,6 @@ class TextClustering:
         cluster_df['cluster'] = cluster_assignment
         
         summarized_clusters = self.summarize(clusters, n_words, name_model)
-        return summarized_clusters, cluster_df
+        summarized_clusters = summarized_clusters.reset_index()
+        result_final = pd.merge(cluster_df, summarized_clusters, left_on='cluster', right_on='index')
+        return summarized_clusters, cluster_df, result_final
