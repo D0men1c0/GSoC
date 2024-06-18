@@ -410,7 +410,7 @@ class TextClustering:
         :param batch_size: the size of each batch
         :return: the clusters and the cluster assignment
         """
-        self.logger.info("Starting clustering with MiniBatchAgglomerativeClustering")
+        self.logger.info("Starting clustering with MiniBatch K-Means Clustering")
         
         # Initialize MiniBatchKMeans clustering
         kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=batch_size)
