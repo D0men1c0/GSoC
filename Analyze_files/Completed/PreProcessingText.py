@@ -314,6 +314,7 @@ class TextClustering:
         :return: the reduced embeddings
         """
         self.logger.info("Performing dimensionality reduction with incremental t-SNE")
+        embeddings_np = self.corpus_embeddings.cpu().numpy()
         tsne = openTSNE.TSNE(
             n_components=n_components,
             perplexity=perplexity,
@@ -323,7 +324,7 @@ class TextClustering:
             negative_gradient_method="fft",
             n_jobs=-1
         )
-        reduced_embeddings = tsne.fit(self.corpus_embeddings)
+        reduced_embeddings = tsne.fit(embeddings_np)
         return np.array(reduced_embeddings, dtype=np.float32)
 
     def perform_community_detection(self, min_community_size=10, threshold=0.7):
