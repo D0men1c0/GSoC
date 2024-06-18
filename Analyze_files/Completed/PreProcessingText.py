@@ -402,27 +402,56 @@ class TextClustering:
 
         return merged_clusters, final_cluster_assignment
 
-    def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples):
+
+    def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples, batch_size):
         """
-        Perform HDBSCAN on embeddings.
+        Perform HDBSCAN on embeddings in batches.
         :param cluster_embeddings: the embeddings of the clusters
         :param min_cluster_size: the minimum cluster size
         :param min_samples: the minimum number of samples
+        :param batch_size: the size of each batch
         :return: the clusters and the cluster assignment
         """
-        self.logger.info("Starting clustering with HDBSCAN")
-        clustering_model = hdbscan.HDBSCAN(min_cluster_size=max(1, int(len(self.data_filtered) * min_cluster_size)), min_samples=min_samples)
-        clustering_model.fit(cluster_embeddings)
-        cluster_assignment = clustering_model.labels_
-        clusters = {}
-        for sentence_id, cluster_id in enumerate(cluster_assignment):
-            if cluster_id == -1:
-                # Ignore noise points
-                continue
-            if cluster_id not in clusters:
-                clusters[cluster_id] = []
-            clusters[cluster_id].append(sentence_id)
-        return clusters, cluster_assignment
+        self.logger.info("Starting clustering with HDBSCAN in batches")
+        total_samples = cluster_embeddings.shape[0]
+        num_batches = int(np.ceil(total_samples / batch_size))
+        
+        all_clusters = []
+        all_cluster_assignments = []
+
+        for batch_idx in range(num_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, total_samples)
+            batch_embeddings = cluster_embeddings[start_idx:end_idx]
+
+            clustering_model = hdbscan.HDBSCAN(min_cluster_size=max(1, int(len(self.data_filtered) * min_cluster_size)), min_samples=min_samples)
+            clustering_model.fit(batch_embeddings)
+            cluster_assignment = clustering_model.labels_
+            
+            batch_clusters = {}
+            for sentence_id, cluster_id in enumerate(cluster_assignment):
+                if cluster_id == -1:
+                    # Ignore noise points
+                    continue
+                if cluster_id not in batch_clusters:
+                    batch_clusters[cluster_id] = []
+                batch_clusters[cluster_id].append(start_idx + sentence_id)
+            
+            all_clusters.append(batch_clusters)
+            all_cluster_assignments.append(cluster_assignment)
+
+        # Merge clusters from all batches
+        merged_clusters = {}
+        for batch_clusters in all_clusters:
+            for cluster_id, sentence_ids in batch_clusters.items():
+                if cluster_id not in merged_clusters:
+                    merged_clusters[cluster_id] = []
+                merged_clusters[cluster_id].extend(sentence_ids)
+
+        # Create final cluster assignment array
+        final_cluster_assignment = np.concatenate(all_cluster_assignments)
+
+        return merged_clusters, final_cluster_assignment
 
     def plot_clusters(self, embeddings_2d, cluster_labels):
         """
@@ -542,7 +571,7 @@ class TextClustering:
             red_embeddings = self.corpus_embeddings
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
         if hdbscan:
-            clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples)
+            clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples, batch_size=batch_cluster_size)
         else:
             clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
         self.plot_clusters(red_embeddings, cluster_assignment)
