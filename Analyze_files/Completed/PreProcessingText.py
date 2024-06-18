@@ -356,6 +356,52 @@ class TextClustering:
             clusters[cluster_id].append(sentence_id)
         return clusters, cluster_assignment
 
+    def perform_agglomerative_clustering_in_batches(self, cluster_embeddings, batch_size, n_clusters=10):
+        """
+        Perform Agglomerative Clustering on embeddings in batches.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param n_clusters: the number of clusters
+        :param batch_size: the size of each batch
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with Agglomerative Clustering in batches")
+        total_samples = cluster_embeddings.shape[0]
+        num_batches = int(np.ceil(total_samples / batch_size))
+        
+        all_clusters = []
+        all_cluster_assignments = []
+
+        for batch_idx in range(num_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, total_samples)
+            batch_embeddings = cluster_embeddings[start_idx:end_idx]
+
+            clustering_model = AgglomerativeClustering(n_clusters=n_clusters)
+            clustering_model.fit(batch_embeddings)
+            cluster_assignment = clustering_model.labels_
+            
+            batch_clusters = {}
+            for sentence_id, cluster_id in enumerate(cluster_assignment):
+                if cluster_id not in batch_clusters:
+                    batch_clusters[cluster_id] = []
+                batch_clusters[cluster_id].append(start_idx + sentence_id)
+            
+            all_clusters.append(batch_clusters)
+            all_cluster_assignments.append(cluster_assignment)
+
+        # Merge clusters from all batches
+        merged_clusters = {}
+        for batch_clusters in all_clusters:
+            for cluster_id, sentence_ids in batch_clusters.items():
+                if cluster_id not in merged_clusters:
+                    merged_clusters[cluster_id] = []
+                merged_clusters[cluster_id].extend(sentence_ids)
+
+        # Create final cluster assignment array
+        final_cluster_assignment = np.concatenate(all_cluster_assignments)
+
+        return merged_clusters, final_cluster_assignment
+
     def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples):
         """
         Perform HDBSCAN on embeddings.
@@ -466,7 +512,7 @@ class TextClustering:
 
         return pd.DataFrame(results).T
 
-    def main(self, name_model, batch_size=32, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, min_cluster_size=0.02, min_samples=None):
+    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, min_cluster_size=0.02, min_samples=None):
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
@@ -498,7 +544,7 @@ class TextClustering:
         if hdbscan:
             clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples)
         else:
-            clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters)
+            clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
         self.plot_clusters(red_embeddings, cluster_assignment)
         
         # Associating clusters with original DataFrame entries
