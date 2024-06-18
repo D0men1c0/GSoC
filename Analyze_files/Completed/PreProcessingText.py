@@ -8,7 +8,8 @@ from nltk import pos_tag, word_tokenize, ne_chunk
 from sentence_transformers import SentenceTransformer, util
 from keybert import KeyBERT
 from sklearn.manifold import TSNE
-import umap
+import openTSNE
+import umap.umap_ as umap
 import hdbscan
 from sklearn.cluster import AgglomerativeClustering
 import logging
@@ -278,7 +279,8 @@ class TextClustering:
         :param embeddings: the embeddings to normalize
         :return: the normalized embeddings
         """
-        return embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+        normalized_embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+        return normalized_embeddings.astype(np.float32)
 
     def reduce_dimensionality(self, n_neighbors=15, n_components=10):
         """
@@ -301,7 +303,29 @@ class TextClustering:
         """
         self.logger.info("Performing dimensionality reduction with t-SNE")
         tsne = TSNE(n_components=n_components, perplexity=perplexity, n_iter=n_iter, metric='cosine')
-        return tsne.fit_transform(self.corpus_embeddings)
+        reduced_embeddings = tsne.fit_transform(self.corpus_embeddings)
+        return reduced_embeddings.astype(np.float32)
+
+    def reduce_dimensionality_Opentsne(self, n_components=2, perplexity=30, n_iter=1000):
+        """
+        Reduce dimensionality of embeddings with t-SNE using openTSNE.
+        :param n_components: the number of components to reduce to
+        :param perplexity: the perplexity value
+        :param n_iter: the number of iterations
+        :return: the reduced embeddings
+        """
+        self.logger.info("Performing dimensionality reduction with incremental t-SNE")
+        tsne = openTSNE.TSNE(
+            n_components=n_components,
+            perplexity=perplexity,
+            n_iter=n_iter,
+            metric="cosine",
+            initialization="pca",
+            negative_gradient_method="fft",
+            n_jobs=-1
+        )
+        reduced_embeddings = tsne.fit(self.corpus_embeddings)
+        return np.array(reduced_embeddings, dtype=np.float32)
 
     def perform_community_detection(self, min_community_size=10, threshold=0.7):
         """
@@ -467,7 +491,7 @@ class TextClustering:
             if reduction == 'UMAP':
                 red_embeddings = self.reduce_dimensionality(n_neighbors=n_neighbors, n_components=n_components_umap)
             else:
-                red_embeddings = self.reduce_dimensionality_tsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
+                red_embeddings = self.reduce_dimensionality_Opentsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
         else:
             red_embeddings = self.corpus_embeddings
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
