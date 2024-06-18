@@ -11,7 +11,7 @@ from sklearn.manifold import TSNE
 import openTSNE
 import umap.umap_ as umap
 import hdbscan
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, MiniBatchKMeans
 import logging
 import numpy as np
 import pandas as pd
@@ -402,6 +402,28 @@ class TextClustering:
 
         return merged_clusters, final_cluster_assignment
 
+    def k_means(self, cluster_embeddings, batch_size, n_clusters=10):
+        """
+        Perform MiniBatchKMeans clustering on embeddings in batches.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param n_clusters: the number of clusters
+        :param batch_size: the size of each batch
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with MiniBatchAgglomerativeClustering")
+        
+        # Initialize MiniBatchKMeans clustering
+        kmeans = MiniBatchKMeans(n_clusters=n_clusters, batch_size=batch_size)
+        cluster_assignment = kmeans.fit_predict(cluster_embeddings)
+
+        # Prepare clusters dictionary
+        clusters = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(sentence_id)
+
+        return clusters, cluster_assignment
 
     def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples, batch_size):
         """
@@ -541,7 +563,7 @@ class TextClustering:
 
         return pd.DataFrame(results).T
 
-    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, min_cluster_size=0.02, min_samples=None):
+    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, k_means=False, min_cluster_size=0.02, min_samples=None):
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
@@ -572,6 +594,8 @@ class TextClustering:
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
         if hdbscan:
             clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples, batch_size=batch_cluster_size)
+        elif k_means:
+            clusters, cluster_assignment = self.k_means(self.corpus_embeddings, batch_size=batch_cluster_size, n_clusters=n_clusters)
         else:
             clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
         self.plot_clusters(red_embeddings, cluster_assignment)
