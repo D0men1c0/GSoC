@@ -279,8 +279,7 @@ class TextClustering:
         :param embeddings: the embeddings to normalize
         :return: the normalized embeddings
         """
-        normalized_embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-        return normalized_embeddings.astype(np.float32)
+        return embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
 
     def reduce_dimensionality(self, n_neighbors=15, n_components=10):
         """
