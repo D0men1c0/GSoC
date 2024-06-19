@@ -292,30 +292,34 @@ class TextClustering:
         reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
         return reducer.fit_transform(self.corpus_embeddings)
 
-    def reduce_dimensionality_UMAP(self, n_neighbors=15, n_components=10, batch_size=30000):
+    def reduce_dimensionality_UMAP(self, batch_size, n_neighbors=15, n_components=10):
         """
-        Reduce dimensionality of embeddings with UMAP in batches.
+        Reduce dimensionality of embeddings with UMAP.
         :param n_neighbors: the number of neighbors to consider
         :param n_components: the number of components to reduce to
-        :param batch_size: the size of each batch
+        :param batch_size: the size of each batch for transformation
         :return: the reduced embeddings
         """
-        self.logger.info("Performing dimensionality reduction with UMAP in batches")
+        self.logger.info("Performing dimensionality reduction with UMAP")
         
         total_samples = self.corpus_embeddings.shape[0]
+        
+        # Fit UMAP on the entire dataset
+        reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
+        self.logger.info("Fitting UMAP on the entire dataset")
+        reducer.fit(self.corpus_embeddings)
+        
+        # Transform data in batches
+        all_reduced_embeddings = []
         num_batches = int(np.ceil(total_samples / batch_size))
         
-        all_reduced_embeddings = []
-
-        reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
-
         for batch_idx in range(num_batches):
             start_idx = batch_idx * batch_size
             end_idx = min((batch_idx + 1) * batch_size, total_samples)
             batch_embeddings = self.corpus_embeddings[start_idx:end_idx]
 
-            self.logger.info(f"Reducing batch {batch_idx + 1}/{num_batches}")
-            reduced_batch_embeddings = reducer.fit_transform(batch_embeddings)
+            self.logger.info(f"Transforming batch {batch_idx + 1}/{num_batches}")
+            reduced_batch_embeddings = reducer.transform(batch_embeddings)
             all_reduced_embeddings.append(reduced_batch_embeddings)
 
         reduced_embeddings = np.vstack(all_reduced_embeddings)
@@ -596,7 +600,7 @@ class TextClustering:
                 'n_2_topics': n_2_topics_
             }
             
-            for i, sentence_id in enumerate(tqdm(cluster[:n_words], desc="Processing top sentences")):
+            for i, sentence_id in enumerate(cluster[:n_words]):
                 try:
                     sentence = self.corpus[sentence_id]
                     results[cluster_id][f'top_{i}'] = sentence
@@ -604,7 +608,7 @@ class TextClustering:
                     self.logger.error(f"Error processing top_{i} of cluster {cluster_id}: {e}")
                     continue
             
-            for i, sentence_id in enumerate(tqdm(cluster[-n_words:], desc="Processing bottom sentences")):
+            for i, sentence_id in enumerate(cluster[-n_words:]):
                 try:
                     sentence = self.corpus[sentence_id]
                     results[cluster_id][f'bottom_{i}'] = sentence
@@ -614,7 +618,7 @@ class TextClustering:
 
         return pd.DataFrame(results).T
 
-    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, min_cluster_size=0.02, min_samples=None):
+    def main(self, name_model, batch_size=32, batch_cluster_size=33370, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, min_cluster_size=0.02, min_samples=None):
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
