@@ -292,6 +292,35 @@ class TextClustering:
         reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
         return reducer.fit_transform(self.corpus_embeddings)
 
+    def reduce_dimensionality_UMAP(self, n_neighbors=15, n_components=10, batch_size=30000):
+        """
+        Reduce dimensionality of embeddings with UMAP in batches.
+        :param n_neighbors: the number of neighbors to consider
+        :param n_components: the number of components to reduce to
+        :param batch_size: the size of each batch
+        :return: the reduced embeddings
+        """
+        self.logger.info("Performing dimensionality reduction with UMAP in batches")
+        
+        total_samples = self.corpus_embeddings.shape[0]
+        num_batches = int(np.ceil(total_samples / batch_size))
+        
+        all_reduced_embeddings = []
+
+        reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
+
+        for batch_idx in range(num_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, total_samples)
+            batch_embeddings = self.corpus_embeddings[start_idx:end_idx]
+
+            self.logger.info(f"Reducing batch {batch_idx + 1}/{num_batches}")
+            reduced_batch_embeddings = reducer.fit_transform(batch_embeddings)
+            all_reduced_embeddings.append(reduced_batch_embeddings)
+
+        reduced_embeddings = np.vstack(all_reduced_embeddings)
+        return reduced_embeddings
+
     def reduce_dimensionality_tsne(self, n_components=2, perplexity=30, n_iter=1000):
         """
         Reduce dimensionality of embeddings with t-SNE.
@@ -425,7 +454,7 @@ class TextClustering:
 
         return clusters, cluster_assignment
 
-    def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples, batch_size):
+    def perform_hdbscan_clustering_batches(self, cluster_embeddings, min_cluster_size, min_samples, batch_size):
         """
         Perform HDBSCAN on embeddings in batches.
         :param cluster_embeddings: the embeddings of the clusters
@@ -475,6 +504,30 @@ class TextClustering:
 
         return merged_clusters, final_cluster_assignment
 
+
+    def perform_hdbscan_clustering(self, cluster_embeddings, min_cluster_size, min_samples):
+        """
+        Perform HDBSCAN clustering on embeddings.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param min_cluster_size: the minimum cluster size
+        :param min_samples: the minimum number of samples
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with HDBSCAN")
+        clustering_model = hdbscan.HDBSCAN(min_cluster_size=max(1, int(len(self.data_filtered) * min_cluster_size)), min_samples=min_samples)
+        clustering_model.fit(cluster_embeddings)
+        cluster_assignment = clustering_model.labels_
+        clusters = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            if cluster_id == -1:
+                # Ignore noise points
+                continue
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(sentence_id)
+        return clusters, cluster_assignment
+        
+
     def plot_clusters(self, embeddings_2d, cluster_labels):
         """
         Visualize clusters in 2D as dots.
@@ -501,42 +554,40 @@ class TextClustering:
         plt.legend()
         plt.show()
 
-    def show_name_clusters(self, cluster, model):
+    def show_name_clusters(self, cluster, kw_model):
         """
         Show the names of the clusters.
         :param cluster: the cluster to show the names of
-        :param model: the SentenceTransformer model to use
+        :param kw_model: the KeyBERT model to use
         :return: the top and bottom words of the clusters
         """
         used = []
-        kw_model = KeyBERT(model=model)
         doc = ""
         for sentence_id in cluster:
             doc += str(self.corpus[sentence_id]) + " "
             used.append(sentence_id)
-        print("--------------------")
-        print(kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None))
+        self.logger.info("Extracting top 5 keywords from cluster")
         n_1_topics_ = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words=None)
+        self.logger.info(f"1-gram topics: {n_1_topics_}")
         n_2_topics_ = kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words=None)
-        print(n_2_topics_)
-        print("--------------------")
+        self.logger.info(f"1-2-gram topics: {n_2_topics_}")
         return n_1_topics_, n_2_topics_, used
 
-    def summarize(self, clusters, n_words, keybert_model):
+    def summarize(self, clusters, n_words, name_model):
         """
         Summarize the clusters with top and bottom words and include cluster size percentage.
         :param clusters: the clusters to summarize
         :param n_words: the number of words to show
-        :param keybert_model: the KeyBERT model to use
+        :param name_model: the name of the SentenceTransformer model
         :return: the summarized clusters
         """
         results = {}
         self.logger.info("Extracting keywords from final clusters")
         total_elements = sum(len(cluster) for cluster in clusters.values())
-
-        for cluster_id, cluster in clusters.items():
+        kw_model = KeyBERT(model=name_model)
+        for cluster_id, cluster in tqdm(clusters.items(), desc="Processing clusters"):
             self.logger.info("\nCluster {}, #{} Elements".format(cluster_id, len(cluster)))
-            n_1_topics_, n_2_topics_, used = self.show_name_clusters(cluster, keybert_model)
+            n_1_topics_, n_2_topics_, used = self.show_name_clusters(cluster, kw_model)
             
             cluster_size_percentage = (len(cluster) / total_elements) * 100
             results[cluster_id] = {
@@ -545,7 +596,7 @@ class TextClustering:
                 'n_2_topics': n_2_topics_
             }
             
-            for i, sentence_id in enumerate(cluster[:n_words]):
+            for i, sentence_id in enumerate(tqdm(cluster[:n_words], desc="Processing top sentences")):
                 try:
                     sentence = self.corpus[sentence_id]
                     results[cluster_id][f'top_{i}'] = sentence
@@ -553,7 +604,7 @@ class TextClustering:
                     self.logger.error(f"Error processing top_{i} of cluster {cluster_id}: {e}")
                     continue
             
-            for i, sentence_id in enumerate(cluster[-n_words:]):
+            for i, sentence_id in enumerate(tqdm(cluster[-n_words:], desc="Processing bottom sentences")):
                 try:
                     sentence = self.corpus[sentence_id]
                     results[cluster_id][f'bottom_{i}'] = sentence
@@ -563,7 +614,7 @@ class TextClustering:
 
         return pd.DataFrame(results).T
 
-    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, k_means=False, min_cluster_size=0.02, min_samples=None):
+    def main(self, name_model, batch_size=32, batch_cluster_size=30000, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, min_cluster_size=0.02, min_samples=None):
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
@@ -578,6 +629,9 @@ class TextClustering:
         :param n_iter: the number of iterations for t-SNE
         :param n_clusters: the number of clusters to create
         :param hdbscan: whether to use HDBSCAN for clustering
+        :param hdbscan_batches: whether to use HDBSCAN in batches
+        :param agglomerative_batches: whether to use Agglomerative Clustering in batches
+        :param k_means: whether to use K-Means for clustering
         :param min_cluster_size: the minimum cluster size for HDBSCAN
         :param min_samples: the minimum number of samples for HDBSCAN
         :return: the summarized clusters
@@ -586,18 +640,24 @@ class TextClustering:
         self.encode_corpus(model, batch_size=batch_size)
         if exec_reduction:
             if reduction == 'UMAP':
-                red_embeddings = self.reduce_dimensionality(n_neighbors=n_neighbors, n_components=n_components_umap)
+                red_embeddings = self.reduce_dimensionality_UMAP(n_neighbors=n_neighbors, n_components=n_components_umap, batch_size=batch_cluster_size)
             else:
                 red_embeddings = self.reduce_dimensionality_Opentsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
         else:
             red_embeddings = self.corpus_embeddings
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
         if hdbscan:
-            clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples, batch_size=batch_cluster_size)
+            if hdbscan_batches:
+                clusters, cluster_assignment = self.perform_hdbscan_clustering_batches(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples, batch_size=batch_cluster_size)
+            else:
+                clusters, cluster_assignment = self.perform_hdbscan_clustering(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples)
         elif k_means:
             clusters, cluster_assignment = self.k_means(self.corpus_embeddings, batch_size=batch_cluster_size, n_clusters=n_clusters)
         else:
-            clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
+            if agglomerative_batches:
+                clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
+            else:
+                clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters)
         self.plot_clusters(red_embeddings, cluster_assignment)
         
         # Associating clusters with original DataFrame entries
