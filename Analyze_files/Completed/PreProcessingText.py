@@ -19,6 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import PCA, FactorAnalysis
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -361,6 +362,47 @@ class TextClustering:
         reduced_embeddings = tsne.fit(embeddings_np)
         return np.array(reduced_embeddings, dtype=np.float32)
 
+    def determine_optimal_components(self, threshold=0.9):
+        """
+        Determine the optimal number of components for PCA based on explained variance threshold.
+        :param threshold: the cumulative explained variance threshold to reach
+        :return: the optimal number of components
+        """
+        self.logger.info("Determining the optimal number of components using PCA")
+
+        pca = PCA()
+        pca.fit(self.corpus_embeddings)
+
+        explained_variance_ratio = pca.explained_variance_ratio_
+        cum_explained_variance = np.cumsum(explained_variance_ratio)
+
+        # Plot cumulative explained variance
+        plt.figure(figsize=(10, 8))
+        plt.plot(range(1, len(cum_explained_variance) + 1), cum_explained_variance, marker='o')
+        plt.xlabel('Number of Components')
+        plt.ylabel('Cumulative Explained Variance')
+        plt.title('Optimal Number of Components')
+        plt.grid(True)
+        plt.show()
+
+        optimal_components = np.argmax(cum_explained_variance >= threshold) + 1
+        self.logger.info(f"Optimal number of components: {optimal_components}")
+        self.logger.info(f"Cumulative explained variance reached: {cum_explained_variance[optimal_components - 1]}")
+
+        return optimal_components
+
+    def reduce_dimensionality_PCA(self, n_components):
+        """
+        Reduce dimensionality of embeddings with PCA.
+        :param n_components: the number of components to reduce to
+        :return: the reduced embeddings
+        """
+        self.logger.info(f"Performing dimensionality reduction with PCA to {n_components} components")
+        pca = PCA(n_components=n_components)
+        reduced_embeddings = pca.fit_transform(self.corpus_embeddings)
+        return reduced_embeddings
+
+
     def perform_community_detection(self, min_community_size=10, threshold=0.7):
         """
         Perform clustering with community_detection.
@@ -372,7 +414,7 @@ class TextClustering:
         clusters = util.community_detection(self.corpus_embeddings, min_community_size=min_community_size, threshold=threshold)
         return clusters
 
-    def perform_agglomerative_clustering(self, cluster_embeddings, n_clusters=10):
+    def perform_agglomerative_clustering(self, cluster_embeddings, n_clusters, metric, linkage):
         """
         Perform Agglomerative Clustering on embeddings.
         :param cluster_embeddings: the embeddings of the clusters
@@ -380,7 +422,7 @@ class TextClustering:
         :return: the clusters and the cluster assignment
         """
         self.logger.info("Starting clustering with Agglomerative Clustering")
-        clustering_model = AgglomerativeClustering(n_clusters=n_clusters)
+        clustering_model = AgglomerativeClustering(n_clusters=n_clusters, metric=metric, linkage=linkage)
         clustering_model.fit(cluster_embeddings)
         cluster_assignment = clustering_model.labels_
         clusters = {}
@@ -390,7 +432,7 @@ class TextClustering:
             clusters[cluster_id].append(sentence_id)
         return clusters, cluster_assignment
 
-    def perform_agglomerative_clustering_in_batches(self, cluster_embeddings, batch_size, n_clusters=10):
+    def perform_agglomerative_clustering_in_batches_prev(self, cluster_embeddings, batch_size, n_clusters, metric, linkage):
         """
         Perform Agglomerative Clustering on embeddings in batches.
         :param cluster_embeddings: the embeddings of the clusters
@@ -409,7 +451,7 @@ class TextClustering:
             end_idx = min((batch_idx + 1) * batch_size, total_samples)
             batch_embeddings = cluster_embeddings[start_idx:end_idx]
 
-            clustering_model = AgglomerativeClustering(n_clusters=n_clusters)
+            clustering_model = AgglomerativeClustering(n_clusters=n_clusters, metric=metric, linkage=linkage)
             cluster_assignment = clustering_model.fit_predict(batch_embeddings)
             
             all_cluster_assignments[start_idx:end_idx] = cluster_assignment + batch_idx * n_clusters
@@ -419,7 +461,61 @@ class TextClustering:
         label_map = {label: idx for idx, label in enumerate(unique_labels)}
         final_cluster_assignment = np.vectorize(label_map.get)(all_cluster_assignments)
 
-        return final_cluster_assignment
+        clusters = {}
+        for sentence_id, cluster_id in enumerate(final_cluster_assignment):
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(sentence_id)
+
+        return clusters, final_cluster_assignment
+    
+
+    def perform_agglomerative_clustering_in_batches(self, cluster_embeddings, batch_size, n_clusters, metric, linkage):
+        """
+        Perform Agglomerative Clustering on embeddings in batches.
+        :param cluster_embeddings: the embeddings of the clusters
+        :param n_clusters: the number of clusters
+        :param batch_size: the size of each batch
+        :return: the clusters and the cluster assignment
+        """
+        self.logger.info("Starting clustering with Agglomerative Clustering in batches")
+        total_samples = cluster_embeddings.shape[0]
+        num_batches = int(np.ceil(total_samples / batch_size))
+        
+        all_clusters = []
+        all_cluster_assignments = []
+
+        for batch_idx in range(num_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, total_samples)
+            batch_embeddings = cluster_embeddings[start_idx:end_idx]
+
+            clustering_model = AgglomerativeClustering(n_clusters=n_clusters, metric=metric, linkage=linkage)
+            clustering_model.fit(batch_embeddings)
+            cluster_assignment = clustering_model.labels_
+            
+            batch_clusters = {}
+            for sentence_id, cluster_id in enumerate(cluster_assignment):
+                if cluster_id not in batch_clusters:
+                    batch_clusters[cluster_id] = []
+                batch_clusters[cluster_id].append(start_idx + sentence_id)
+            
+            all_clusters.append(batch_clusters)
+            all_cluster_assignments.append(cluster_assignment)
+
+        # Merge clusters from all batches
+        merged_clusters = {}
+        for batch_clusters in all_clusters:
+            for cluster_id, sentence_ids in batch_clusters.items():
+                if cluster_id not in merged_clusters:
+                    merged_clusters[cluster_id] = []
+                merged_clusters[cluster_id].extend(sentence_ids)
+
+        # Create final cluster assignment array
+        final_cluster_assignment = np.concatenate(all_cluster_assignments)
+
+        return merged_clusters, final_cluster_assignment
+
 
     def k_means(self, cluster_embeddings, batch_size, n_clusters=10):
         """
@@ -627,7 +723,7 @@ class TextClustering:
 
         return pd.DataFrame(results).T
 
-    def main(self, name_model, batch_size=32, batch_cluster_size=33370, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, elbow=False, min_cluster_size=0.02, min_samples=None):
+    def main(self, name_model, batch_size=32, batch_cluster_size=33370, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, elbow=False, min_cluster_size=0.02, min_samples=None, threshold=0.8):
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
@@ -648,18 +744,34 @@ class TextClustering:
         :param elbow: whether to plot the elbow method for K-Means
         :param min_cluster_size: the minimum cluster size for HDBSCAN
         :param min_samples: the minimum number of samples for HDBSCAN
+        :param threshold: the threshold for PCA
         :return: the summarized clusters
         """
         model = SentenceTransformer(name_model)
+
+        # Encode the corpus
         self.encode_corpus(model, batch_size=batch_size)
+
+        # Reduce dimensionality
+        distance = 'euclidean'
+        linkage='ward'
         if exec_reduction:
             if reduction == 'UMAP':
                 red_embeddings = self.reduce_dimensionality_UMAP(n_neighbors=n_neighbors, n_components=n_components_umap, batch_size=batch_cluster_size)
+            elif reduction == 'PCA':
+                optimal_components = self.determine_optimal_components(threshold=threshold)
+                red_embeddings = self.reduce_dimensionality_PCA(n_components=optimal_components)
             else:
                 red_embeddings = self.reduce_dimensionality_Opentsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
         else:
+            distance = 'cosine'
+            linkage="average"
             red_embeddings = self.corpus_embeddings
+
+        # Normalize embeddings
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
+
+        # Clustering
         if hdbscan:
             if hdbscan_batches:
                 clusters, cluster_assignment = self.perform_hdbscan_clustering_batches(self.corpus_embeddings, min_cluster_size=min_cluster_size, min_samples=min_samples, batch_size=batch_cluster_size)
@@ -671,25 +783,38 @@ class TextClustering:
                 self.plot_elbow_method(self.corpus_embeddings, batch_size, max_k=25)
         else:
             if agglomerative_batches:
-                clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size)
+                clusters, cluster_assignment = self.perform_agglomerative_clustering_in_batches(self.corpus_embeddings, n_clusters=n_clusters, batch_size=batch_cluster_size, metric=distance, linkage=linkage)
             else:
-                clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters)
-        self.plot_clusters(red_embeddings, cluster_assignment)
+                clusters, cluster_assignment = self.perform_agglomerative_clustering(self.corpus_embeddings, n_clusters=n_clusters, metric=distance, linkage=linkage)
+
+        # Plotting clusters
+        if exec_reduction:
+            self.plot_clusters(red_embeddings, cluster_assignment)
+        else:
+            red_embeddings = self.reduce_dimensionality_Opentsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
+            self.plot_clusters(red_embeddings, cluster_assignment)
         
         # Associating clusters with original DataFrame entries
         cluster_df = self.data_filtered.copy()
         cluster_df['cluster'] = cluster_assignment
+
         # Filter out outliers (label -1)
         non_outlier_indices = np.where(cluster_assignment != -1)
         filtered_embeddings = self.corpus_embeddings[non_outlier_indices]
         filtered_labels = cluster_assignment[non_outlier_indices]
+            
+        # Evaluate clustering
         self.logger.info("Evaluating Silhouette Score")
         sil_score = silhouette_score(filtered_embeddings, filtered_labels)
         self.logger.info(f"Silhouette Score: {sil_score}")
         self.logger.info("Evaluating Davies-Bouldin Index")
         db_score = davies_bouldin_score(filtered_embeddings, filtered_labels)
         self.logger.info(f"Davies-Bouldin Index: {db_score}")
+
+        # Summarize clusters
         summarized_clusters = self.summarize(clusters, n_words, name_model)
         summarized_clusters = summarized_clusters.reset_index()
+
+        # Merge cluster information with original DataFrame
         result_final = pd.merge(cluster_df, summarized_clusters, left_on='cluster', right_on='index')
         return summarized_clusters, cluster_df, result_final
