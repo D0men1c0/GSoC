@@ -19,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import PCA, FactorAnalysis
+from sklearn.decomposition import PCA, FactorAnalysis, KernelPCA
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -237,6 +237,8 @@ class TextClustering:
         self.text_column = text_column
         self.corpus = self.load_corpus()
         self.corpus_embeddings = None
+        self.directory_embeddings = None
+        self.directory_embedding_previous = None
         self.logger = self.initialize_logger()
 
     def initialize_logger(self):
@@ -402,6 +404,36 @@ class TextClustering:
         reduced_embeddings = pca.fit_transform(self.corpus_embeddings)
         return reduced_embeddings
 
+    def reduce_dimensionality_KPCA(self, n_components, kernel='rbf', gamma=0.1):
+        """
+        Reduce dimensionality of embeddings with Kernel PCA.
+        :param n_components: the number of components to reduce to
+        :param kernel: the kernel function to use ('rbf', 'linear', 'poly', 'sigmoid', etc.)
+        :param gamma: kernel coefficient for 'rbf', 'poly' and 'sigmoid'
+        :return: the reduced embeddings
+        """
+        self.logger.info(f"Performing dimensionality reduction with Kernel PCA to {n_components} components")
+
+        kpca = KernelPCA(n_components=n_components, kernel=kernel, gamma=gamma)
+        reduced_embeddings = kpca.fit_transform(self.corpus_embeddings)
+        
+        return reduced_embeddings
+
+    def reduce_dimensionalityPCA_UMAP(self, n_neighbors=15, n_components=10, pca_components=50):
+        """
+        Reduce dimensionality of embeddings with UMAP, optionally using PCA for preliminary reduction.
+        :param n_neighbors: the number of neighbors to consider
+        :param n_components: the number of components to reduce to
+        :param pca_components: the number of components for PCA preliminary reduction
+        :return: the reduced embeddings
+        """
+        self.logger.info("Performing preliminary dimensionality reduction with PCA")
+        pca = PCA(n_components=pca_components)
+        reduced_data = pca.fit_transform(self.corpus_embeddings)
+        
+        self.logger.info("Performing dimensionality reduction with UMAP")
+        reducer = umap.UMAP(n_neighbors=n_neighbors, n_components=n_components, metric='cosine')
+        return reducer.fit_transform(reduced_data)
 
     def perform_community_detection(self, min_community_size=10, threshold=0.7):
         """
@@ -722,11 +754,34 @@ class TextClustering:
                     continue
 
         return pd.DataFrame(results).T
+    
 
-    def main(self, name_model, batch_size=32, batch_cluster_size=33370, exec_reduction=True, reduction='tSNE', n_neighbors=15, n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, k_means=False, elbow=False, min_cluster_size=0.02, min_samples=None, threshold=0.8):
+    def evaluate_clusters(self, filtered_embeddings, filtered_labels):
+        """
+        Evaluate the clusters using Silhouette Score and Davies-Bouldin Index.
+        :param filtered_embeddings: the filtered embeddings
+        :param filtered_labels: the filtered labels
+        """
+        self.logger.info("Evaluating Silhouette Score")
+        sil_score = silhouette_score(filtered_embeddings, filtered_labels)
+        self.logger.info(f"Silhouette Score: {sil_score}")
+        self.logger.info("Evaluating Davies-Bouldin Index")
+        db_score = davies_bouldin_score(filtered_embeddings, filtered_labels)
+        self.logger.info(f"Davies-Bouldin Index: {db_score}")
+
+
+    def main(self, name_model, reduce_previous=False, save_embeddings=False, directory_embeddings=None, batch_size=32, 
+             batch_cluster_size=33370, exec_reduction=True, reduction='tSNE', n_neighbors=15, 
+             n_components_umap=10, n_words=20, n_components=2, perplexity=30, n_iter=1000, 
+             n_clusters=6, hdbscan=False, hdbscan_batches=True, agglomerative_batches=True, 
+             k_means=False, elbow=False, min_cluster_size=0.02, min_samples=None, threshold=0.8):
+        
         """
         Main function to cluster text data.
         :param name_model: the name of the SentenceTransformer model to use
+        :param reduce_previous: whether to reduce the previous embeddings
+        :param save_embeddings: whether to save the embeddings
+        :param directory_embeddings: the directory to save the embeddings
         :param batch_size: the batch size for encoding
         :param exec_reduction: whether to execute dimensionality reduction
         :param reduction: the reduction technique to use
@@ -752,21 +807,35 @@ class TextClustering:
         # Encode the corpus
         self.encode_corpus(model, batch_size=batch_size)
 
+        # Normalize embeddings prior to dimensionality reduction
+        if reduce_previous:
+            self.corpus_embeddings = self.normalize_embeddings(self.corpus_embeddings)
+            processed_embeddings = self.corpus_embeddings
+        else:
+            processed_embeddings = self.normalize_embeddings(self.corpus_embeddings)
+
+
         # Reduce dimensionality
         distance = 'euclidean'
         linkage='ward'
         if exec_reduction:
             if reduction == 'UMAP':
                 red_embeddings = self.reduce_dimensionality_UMAP(n_neighbors=n_neighbors, n_components=n_components_umap, batch_size=batch_cluster_size)
-            elif reduction == 'PCA':
+            elif (reduction == 'PCA' or reduction == 'KPCA'):
                 optimal_components = self.determine_optimal_components(threshold=threshold)
-                red_embeddings = self.reduce_dimensionality_PCA(n_components=optimal_components)
+                if reduction == 'PCA':
+                    red_embeddings = self.reduce_dimensionality_PCA(n_components=optimal_components)
+                else:
+                    red_embeddings = self.reduce_dimensionality_KPCA(n_components=optimal_components)
+            elif reduction == 'PCAUMAP':
+                red_embeddings = self.reduce_dimensionalityPCA_UMAP(n_neighbors=n_neighbors, n_components=n_components, pca_components=50)
             else:
                 red_embeddings = self.reduce_dimensionality_Opentsne(n_components=n_components, perplexity=perplexity, n_iter=n_iter)
         else:
             distance = 'cosine'
             linkage="average"
             red_embeddings = self.corpus_embeddings
+
 
         # Normalize embeddings
         self.corpus_embeddings = self.normalize_embeddings(red_embeddings)
@@ -802,19 +871,49 @@ class TextClustering:
         non_outlier_indices = np.where(cluster_assignment != -1)
         filtered_embeddings = self.corpus_embeddings[non_outlier_indices]
         filtered_labels = cluster_assignment[non_outlier_indices]
-            
-        # Evaluate clustering
-        self.logger.info("Evaluating Silhouette Score")
-        sil_score = silhouette_score(filtered_embeddings, filtered_labels)
-        self.logger.info(f"Silhouette Score: {sil_score}")
-        self.logger.info("Evaluating Davies-Bouldin Index")
-        db_score = davies_bouldin_score(filtered_embeddings, filtered_labels)
-        self.logger.info(f"Davies-Bouldin Index: {db_score}")
+
+        # Save embeddings with indices
+        if save_embeddings:
+            self.directory_embeddings = directory_embeddings
+            self.save_embeddings(self.directory_embeddings, cluster_assignment, non_outlier_indices, filtered_embeddings)
+            self.directory_embedding_previous = f"{directory_embeddings}_previous"
+            self.save_embeddings(self.directory_embedding_previous, cluster_assignment, non_outlier_indices, processed_embeddings)
+
+        # Evaluate clusters
+        self.evaluate_clusters(filtered_embeddings, filtered_labels)
 
         # Summarize clusters
-        summarized_clusters = self.summarize(clusters, n_words, name_model)
-        summarized_clusters = summarized_clusters.reset_index()
+        summarized_clusters = self.summarize(clusters, n_words, name_model).reset_index()
 
         # Merge cluster information with original DataFrame
         result_final = pd.merge(cluster_df, summarized_clusters, left_on='cluster', right_on='index')
+
         return summarized_clusters, cluster_df, result_final
+
+
+    def save_embeddings(self, directory, cluster_assignment, non_outlier_indices, filtered_embeddings):
+        """
+        Save the embeddings with indices.
+        :param cluster_assignment: the cluster assignment
+        :param non_outlier_indices: the indices of non-outliers
+        :param filtered_embeddings: the filtered embeddings
+        """
+        embeddings_with_indices = {
+            'embeddings': filtered_embeddings,
+            'indices': np.arange(len(cluster_assignment))[non_outlier_indices]
+        }
+        np.save(directory, embeddings_with_indices)
+
+    
+    def load_embeddings(self, to_frame=False):
+        """
+        Load the embeddings with indices.
+        :param to_frame: whether to convert to a DataFrame
+        :return: the embeddings with indices
+        """
+        embeddings_with_indices = np.load(f"{self.directory_embeddings}.npy", allow_pickle=True).item()
+        embeddings_with_indices_previous = np.load(f"{self.directory_embedding_previous}.npy", allow_pickle=True).item()
+        if to_frame:
+            return pd.DataFrame({'index': embeddings_with_indices['embeddings'], 'embedding': embeddings_with_indices['indices']}), pd.DataFrame({'index': embeddings_with_indices_previous['embeddings'], 'embedding': embeddings_with_indices_previous['indices']})
+        else:
+            return embeddings_with_indices['embeddings'], embeddings_with_indices['indices'], embeddings_with_indices_previous['embeddings'], embeddings_with_indices_previous['indices']
